@@ -1,10 +1,7 @@
 import lib.jadsl.list.MultiPropertyArrayList;
-import lib.jadsl.list.StaticSizeArrayList;
 import lib.jadsl.list.StaticSizeMultiPropertyArrayList;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -16,23 +13,31 @@ import java.util.Random;
  */
 public class K_Means {
     private final int k;
-    private final double threshhold;
+    private final double threshold;
     private StaticSizeMultiPropertyArrayList<Double> observations;
     private StaticSizeMultiPropertyArrayList<Double> means;
     private MultiPropertyArrayList<Double>[] clusters;
     private boolean running = false;
 
-    public K_Means(int k,int threshhold){
+    public K_Means(int k,int threshold){
         this.k = k;
-        this.threshhold = threshhold;
+        this.threshold = threshold;
         if(k == 1)throw new IllegalArgumentException("k needs to be > 1");
-        this.means = new StaticSizeMultiPropertyArrayList<Double>(k);
+        this.means = new StaticSizeMultiPropertyArrayList<>(k);
         means.ensureCapacity(k);
         means.makeBoundriesStrictlyStatic();
         clusters = new MultiPropertyArrayList[k];
     }
 
+    public MultiPropertyArrayList<Double>[] getClusters(){
+        if(running)throw new IllegalStateException("Data Clustering is still in progress");
+        return clusters;
+    }
 
+    public StaticSizeMultiPropertyArrayList<Double> getMeans(){
+        if(running)throw new IllegalStateException("Data Clustering is still in progress");
+        return means;
+    }
     public void supplyData(StaticSizeMultiPropertyArrayList<Double> observations){
         this.observations = observations;
         if(k > observations.size())throw new IllegalArgumentException("there need to be more oberservations the clusters to be calculated");
@@ -60,7 +65,7 @@ public class K_Means {
         running = false;
         return result;
     }
-    public void initalize(){
+    private void initalize(){
         Double[] totalMean = calculateMean(observations);
         double average_euclidean_distance = 0;
         for(Double[] x:observations){
@@ -73,8 +78,8 @@ public class K_Means {
         double max_euclidean_distance;
         int offset = 1;
         Random rand = new Random();
-        ArrayList<Integer> failedIndecies = new ArrayList<Integer>();
-        ArrayList<Integer> usedIndecies = new ArrayList<Integer>();
+        ArrayList<Integer> failedIndecies = new ArrayList<>();
+        ArrayList<Integer> usedIndecies = new ArrayList<>();
         while (!sucess) {
             min_euclidean_distance = Math.max(average_euclidean_distance / (1 + offset * 0.1),average_euclidean_distance / 6);
             max_euclidean_distance = Math.min(average_euclidean_distance * (1 + offset * 0.1),average_euclidean_distance * 2);
@@ -104,16 +109,16 @@ public class K_Means {
         }
 
     }
-    public int run(int max){
+    private int run(int max){
         int finished = 0;
         int i;
         for (i = 0;(i < max||max == -1)&&finished<10;i++){
-            if(update()< threshhold)finished++;
+            if(update()< threshold)finished++;
             else finished = 0;
         }
         return i;
     }
-    public double update(){
+    private double update(){
         for(MultiPropertyArrayList<Double> cluster:clusters){
             cluster.clear();
         }
@@ -132,7 +137,7 @@ public class K_Means {
         return meanchange;
     }
     //returns the index of the nearest mean and the distance to that mean
-    public static double[] determineClosestMean(StaticSizeMultiPropertyArrayList<Double> means,Double[] x){
+    private static double[] determineClosestMean(StaticSizeMultiPropertyArrayList<Double> means,Double[] x){
         double smallestDistance = euclidean_distance(means.get(0),x);
         int closestIndex = 0;
         for(int i = 1;i < means.size();i++){
@@ -143,7 +148,7 @@ public class K_Means {
         }
         return new double[]{closestIndex,smallestDistance};
     }
-    public static Double[] calculateMean(MultiPropertyArrayList<Double> cluster){
+    private static Double[] calculateMean(MultiPropertyArrayList<Double> cluster){
         Double[] res = new Double[cluster.getDimension()];
         for(Double[] x:cluster){
             for(int i = 0;i<cluster.getDimension();i++){
@@ -155,7 +160,7 @@ public class K_Means {
         }
         return res;
     }
-    public static Double[] calculateMean(StaticSizeMultiPropertyArrayList<Double> cluster){
+    private static Double[] calculateMean(StaticSizeMultiPropertyArrayList<Double> cluster){
         Double[] res = new Double[cluster.getDimension()];
         for(Double[] x:cluster){
             for(int i = 0;i<cluster.getDimension();i++){
@@ -167,7 +172,7 @@ public class K_Means {
         }
         return res;
     }
-    public static double euclidean_distance(Double[] x1, Double[] x2){
+    private static double euclidean_distance(Double[] x1, Double[] x2){
         if(x1.length != x2.length)throw new IllegalArgumentException("Euclidean distance can only be calculated for vectors with equal dimensions!\n Dimension of "+ x1+" is "+x1.length+"\n Dimension of "+ x2+" is "+x2.length);
         double l = 0;
         for(int i = 0;i < x1.length;i++){
