@@ -45,7 +45,7 @@ public class SelfOrganizedMap {
             final double radius = calculateRadius(i,iterations);
             final double learningRate = calculateLearningRate(i,iterations);
             for(int j = 0;j < trainingData.size();j++){
-                DataVector trainingVector = trainingData.get(i);
+                DataVector trainingVector = trainingData.get(j);
                 int closestLatticeX = 0;
                 int closestLatticeY = 0;
                 double closestDistance = trainingVector.distance(grid[0][0]);
